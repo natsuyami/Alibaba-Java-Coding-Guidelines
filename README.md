@@ -24,6 +24,11 @@
    * [Library Specification](#library-specification)
    * [Server Specification](#server-specification)
 * [5. Security Specification](#5-security-specification)
+* [6. Custom Update](#custom-update)
+   * [Controller](#controller)
+   * [Service](#service)
+   * [Model](#model)
+
 
 ## Preface
 We are pleased to present **Alibaba Java Coding Guidelines**, which consolidates the best programming practices from Alibaba Group's technical teams. A vast number of Java programming teams impose demanding requirements on code quality across projects as we encourage reuse and better understanding of each other's programs. We have seen many programming problems in the past. For example, defective database table structures and index designs may cause software architecture flaws and performance risks. As another example, confusing code structures make it difficult to maintain. Furthermore, vulnerable code without authentication is prone to hackers’ attacks. To address those kinds of problems, we developed this document for Java developers in Alibaba. 
@@ -368,7 +373,7 @@ List<String> a = new ArrayList<String>();
 a.add("1");
 a.add("2");
 for (String temp : a) {
-    if ("1".equals(temp)){
+    if ("1".equals(temp)) {
         a.remove(temp);
     }
 }
@@ -1034,3 +1039,82 @@ map.put("size", size);
 
 8\. **[Recommended]** In scenarios when users generate content (e.g., posting, comment, instant messages), anti-scam word filtering and other risk control strategies must be applied.
 
+## Custom Update
+
+### <font color="green">Controller</font>
+
+1\. **[Mandatory]** Do not add domain/business logic inside the *Controller* class. Controller class should only be responsible for the input and sanitization (e.g. required fields, type of request, URI, service and authentication call).
+> <font color="#019858">Positive example: </font>
+```java
+@PostMapping("/accounts")
+public Object createAccount(@RequestBody AccountDto accountDto) {
+    return accountService.create(accountDto);
+}
+```
+
+2\. **[Recommended]** API should be documented as much as possible by providing the parameters, required fields in the parameter, type of request, different response that would occur, description and notes if any.
+> <font color="#977C00">Note: </font>The example provided below uses swagger for documentation.   
+> <font color="#019858">Positive example: </font>   
+```java
+@PostMapping("/accounts")
+@ApiOperation(value = "create new account",
+    notes = "no error formats as of now",
+    response = AccountDto.class)
+@ApiResponses(value = {
+    @ApiResponse(code = 400, 
+        message = "there is an invalid data from submitted values, see error message")
+})
+@PostMapping("/accounts")
+public Object createAccount(@RequestBody AccountDto accountDto) {
+    ...
+}
+```
+
+3\. **[Recommended]** Use nouns instead of verbs in the endpoint paths, which represent entities/resources to fetch or manipulate and use consistently plural nouns.
+> <font color="#019858">Positive example: </font>
+```java
+@PostMapping("/orders/{id}/products")
+@GetMapping("/orders/products")
+```
+
+4\. **[Mandatory]** Consumes and produces should have default content type in controller class, overriding it on method when it has different payload and response from the others.
+```java
+@RestController
+@RequestMapping(value = "/accounts", consumes = "application/json", produces = "application/json")
+public class AccountController {
+    ...
+}
+```
+
+5.\ **[Mandatory]** The operation must be represented by the HTTP request, GET retrieves resources. POST creates a new data record. PUT updates existing data. PATCH update some of values from existing data. DELETE removes data.
+
+### <font color="green">Service</font>
+
+1\. **[Mandatory]** Use global/custom errors handler that has been define in the application rather than defining your own error.
+
+2\. **[Mandatory]** Endpoints from the REST call should be declared in the `application.properties` and be declared as a member variable of the class where the rest call is executed.
+> <font color="#019858">Positive example: </font>
+```java
+public class AccountService() {
+
+    @Value("${app.sample.customer.url}")
+    private String customerUrl;
+	
+	@Autowired
+	private RestTemplateService restTemplateService;
+
+	public void customerExist(long customerId) {
+        try {
+            restTemplateService.get(customerUrl, customerId);
+        } catch (ResourcesNotFound e) {
+            throw new ValidationException("customer.not.exist");
+        }
+    }
+}
+```
+
+### <font color="green">Model</font>
+
+1\. **[Mandatory]** Do not expose model from controller, use `DTO` for sending data as response or accepting data from a request.
+
+2\. **[Mandatory]** Hide and adjust attributes from the `DTO` not to the Model.
