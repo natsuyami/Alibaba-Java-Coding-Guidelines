@@ -1077,7 +1077,7 @@ public Object createAccount(@RequestBody AccountDto accountDto) {
 @GetMapping("/orders/products")
 ```
 
-4\. **[Mandatory]** Consumes and produces should have default content type in controller class, overriding it on method when it has different payload and response from the others.
+4\. **[Mandatory]** Produces should have default content type in controller class, overriding it on method when it has different response from the others while consumes content type declared in method.
 ```java
 @RestController
 @RequestMapping(value = "/accounts", consumes = "application/json", produces = "application/json")
